@@ -1,4 +1,4 @@
-import sequtils, unicode, streams
+import sequtils, unicode, streams, algorithm
 import pixie
 import text
 
@@ -78,22 +78,23 @@ proc parseNimCode*(s: Text, state: NimParseState, len = 100): tuple[segments: se
           sType
 
         else:
-          case $s[state.pos ..< state.pos + l].toOpenArray.toSeq
-          of "func", "proc", "template", "iterator", "converter", "macro", "method", 
-            "addr", "asm", "bind", "concept", "const", "discard", "distinct", "enum", "export", "from", 
-            "import", "include", "interface", "let", "mixin", "nil", "object", "of", "out", "ptr", 
-            "ref", "static", "tuple", "type", "using", "var", "true", "false", "off", "on", "low", "high", "lent", "sink":
+          let text = $s[state.pos ..< state.pos + l].toOpenArray.toSeq
+          if binarySearch(["addr", "asm", "bind", "concept", "const", "converter", "discard", "distinct", "enum",
+            "export", "false", "from", "func", "high", "import", "include", "interface", "iterator", "let", "low",
+            "macro", "method", "mixin", "nil", "object", "of", "off", "on", "out", "ptr", "proc", "ref", "sink",
+            "static", "template", "true", "tuple", "type", "using", "var"], text) != -1:
             sKeyword
 
-          of "block", "break", "case", "continue", "defer", "do", "elif", "else", "end", "except", 
-            "finally", "for", "if", "raise", "return", "try", "when", "while", "yield":
+          elif binarySearch(["block", "break", "case", "continue", "defer", "do", "elif", "else", "end", "except", 
+            "finally", "for", "if", "raise", "return", "try", "when", "while", "yield"], text) != -1:
             sControlFlow
           
-          of "and", "as", "cast", "div", "in", "isnot", "is", "mod", "notin", "not", "or", "shl", "shr", "xor", "echo":
+          elif binarySearch(["and", "as", "cast", "div", "echo", "in", "is", "isnot", "mod", "not", "notin", "or", "shl",
+            "shr", "xor"], text) != -1:
             sOperatorWord
           
-          of "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float32", "float64", 
-            "int", "float", "string", "bool", "byte", "uint", "seq", "set", "char", "void", "auto", "any", "pointer":
+          elif binarySearch(["any", "auto", "bool", "byte", "char", "float", "float32", "float64", "int", "int16",
+            "int32", "int64", "int8", "pointer", "seq", "set", "string", "uint", "uint16", "uint32", "uint64", "uint8", "void"], text) != -1:
             sBuiltinType
         
           elif exist(l) and (peek(l) == "(".rune or peek(l) == "\"".rune):
