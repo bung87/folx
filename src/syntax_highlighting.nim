@@ -1,6 +1,7 @@
 import sequtils, unicode, streams
 import pixie
 import text
+import fusion/matching
 
 const
   OpChars  = ['+', '-', '*', '/', '\\', '<', '>', '!', '?', '^', '.',
@@ -82,22 +83,23 @@ proc parseNimCode*(s: Text, state: NimParseState, len = 100): tuple[segments: se
           sType
 
         else:
-          case $s[state.pos ..< state.pos + l].toOpenArray.toSeq
-          of "func", "proc", "template", "iterator", "converter", "macro", "method", 
-            "addr", "asm", "bind", "concept", "const", "discard", "distinct", "enum", "export", "from", 
-            "import", "include", "interface", "let", "mixin", "nil", "object", "of", "out", "ptr", 
-            "ref", "static", "tuple", "type", "using", "var", "true", "false", "off", "on", "low", "high", "lent", "sink":
+          let id = s[state.pos ..< state.pos + l].toOpenArray.toSeq
+          if id in ["func".runes, "proc".runes, "template".runes, "iterator".runes, "converter".runes, "macro".runes, "method".runes, 
+            "addr".runes, "asm".runes, "bind".runes, "concept".runes, "const".runes, "discard".runes, "distinct".runes, "enum".runes, "export".runes, "from".runes, 
+            "import".runes, "include".runes, "interface".runes, "let".runes, "mixin".runes, "nil".runes, "object".runes, "of".runes, "out".runes, "ptr".runes, 
+            "ref".runes, "static".runes, "tuple".runes, "type".runes, "using".runes, "var".runes, "true".runes, "false".runes, "off".runes, "on".runes, "low".runes,
+            "high".runes, "lent".runes, "sink".runes]:
             sKeyword
 
-          of "block", "break", "case", "continue", "defer", "do", "elif", "else", "end", "except", 
-            "finally", "for", "if", "raise", "return", "try", "when", "while", "yield":
+          elif id in  ["block".runes, "break".runes, "case".runes, "continue".runes, "defer".runes, "do".runes, "elif".runes, "else".runes, "end".runes, "except".runes, 
+            "finally".runes, "for".runes, "if".runes, "raise".runes, "return".runes, "try".runes, "when".runes, "while".runes, "yield".runes]:
             sControlFlow
           
-          of "and", "as", "cast", "div", "in", "isnot", "is", "mod", "notin", "not", "or", "shl", "shr", "xor", "echo":
+          elif id in ["and".runes, "as".runes, "cast".runes, "div".runes, "in".runes, "isnot".runes, "is".runes, "mod".runes, "notin".runes, "not".runes, "or".runes, "shl".runes, "shr".runes, "xor".runes, "echo".runes]:
             sOperatorWord
           
-          of "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float32", "float64", 
-            "int", "float", "string", "bool", "byte", "uint", "seq", "set", "char", "void", "auto", "any", "pointer":
+          elif id in ["int8".runes, "int16".runes, "int32".runes, "int64".runes, "uint8".runes, "uint16".runes, "uint32".runes, "uint64".runes, "float32".runes, "float64".runes, 
+            "int".runes, "float".runes, "string".runes, "bool".runes, "byte".runes, "uint".runes, "seq".runes, "set".runes, "char".runes, "void".runes, "auto".runes, "any".runes, "pointer".runes]:
             sBuiltinType
         
           elif exist(l) and (peek(l) == "(".rune or peek(l) == "\"".rune):
